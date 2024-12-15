@@ -3,6 +3,19 @@
 
 use std::fs;
 use std::env;
+
+fn copy_file(src:&String,dest:&String) {
+    match fs::copy(src, dest) {
+        Ok(_) => (),
+        Err(e) => println!("Unexpected error: {}", e),
+    }
+}
+fn delete_file(file_path: &str) {
+    match fs::remove_file(file_path) {
+        Ok(_) => (),
+        Err(e) => println!("Unexpected error when deleting file '{}': {}", file_path, e),
+    }
+}
 fn main() {
     /*Here I'm declaring a Vec<String> named args to hold the arguements.
     std::env module is used to collece command line arguements*/
@@ -42,9 +55,33 @@ fn main() {
         }
     }
 
-    println!("Here are the files in the directory {path}");
-    for file in files{
-        print!("{file}\n");
+    /*To Identifying the file types, using the split method for string*/
+    let mut filetypes: Vec<String> = Vec::new();
+
+    for file in &files{
+        let temp: Vec<&str> = file.split('.').collect();
+        if temp.len() > 1 && !filetypes.contains(&temp[1].to_string()){
+            filetypes.push(temp[1].to_string());
+        }
     }
+
+    for filetype in &filetypes{
+        let newdir: String = path.to_string() + "/" + &filetype;
+        match fs::create_dir(newdir){
+            Ok(result) => result,
+            Err(e)=>println!("Error Creating Dir {e}"),
+        }
+    }
+
+    //Moving the files to their respective dirs
+    for file in &files{
+        let temp: Vec<&str> = file.split('.').collect();
+        if temp.len() > 1{
+            let src:String = path.to_string() + "/" + file;
+            let dest:String = path.to_string() + "/" + temp[1] + "/"+file;
+            copy_file(&src, &dest);
+            delete_file(&src);
+        }
+    }    
     
 }
